@@ -1,0 +1,9 @@
+flask
+flask_cors
+flasgger
+flask_restful
+pyairtable
+gunicorn
+psycopg2
+requests
+logging
