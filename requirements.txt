@@ -7,3 +7,6 @@ gunicorn
 psycopg2
 requests
 logging
+flask_sqlalchemy
+flask_bcrypt
+datetime
