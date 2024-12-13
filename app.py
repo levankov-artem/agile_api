@@ -42,7 +42,13 @@ class Investment(db.Model):
     storage_period = db.Column(db.Integer, nullable=False)
     investment_date = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Routes
+@app.route('/test_session', methods=['GET'])
+def test_session():
+    if 'user_id' in session:
+        return jsonify({'message': 'Session is active', 'user_id': session['user_id']}), 200
+    else:
+        return jsonify({'error': 'No active session'}), 403
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -80,6 +86,11 @@ def login():
         return jsonify({'message': 'Login successful', 'user_id': user.id, 'user_type': user.user_type}), 200
     else:
         return jsonify({'error': 'Invalid credentials'}), 401
+
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'message': 'Logged out successfully'}), 200
 
 @app.route('/user/<int:id>', methods=['GET'])
 def get_user_details(id):
