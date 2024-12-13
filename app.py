@@ -11,7 +11,6 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 CORS(app)
 
-# Database Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -35,6 +34,42 @@ class Investment(db.Model):
     investment_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Routes
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
+    user_type = data.get('user_type')
+
+    if not username or not email or not password or not user_type:
+        return jsonify({'error': 'All fields are required'}), 400
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_user = User(username=username, email=email, password=hashed_password, user_type=user_type)
+
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({'message': 'User registered successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'error': 'All fields are required'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if user and bcrypt.check_password_hash(user.password, password):
+        return jsonify({'message': 'Login successful', 'user_id': user.id, 'user_type': user.user_type}), 200
+    else:
+        return jsonify({'error': 'Invalid credentials'}), 401
+
 @app.route('/update_user', methods=['POST'])
 def update_user():
     data = request.get_json()
