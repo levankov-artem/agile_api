@@ -8,13 +8,16 @@ from datetime import datetime
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://admin:DSJ9tN8De8i3MnRGIwypnF1kwVKNZ2Yw@dpg-ct4a1nl2ng1s73a3t47g-a.frankfurt-postgres.render.com/project_2hrv'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a strong secret key
-app.config['SESSION_TYPE'] = 'filesystem'  # Session stored on the server's filesystem
+app.config['SECRET_KEY'] = 'qeV5c1nsqKZ7pNFt2EO0HPGgBADipaHH'
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 Session(app)
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # Database Models
 class User(db.Model):
