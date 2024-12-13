@@ -10,3 +10,4 @@ logging
 flask_sqlalchemy
 flask_bcrypt
 datetime
+flask_session
