@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
@@ -33,7 +33,19 @@ class Investment(db.Model):
     storage_period = db.Column(db.Integer, nullable=False)
     investment_date = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Routes
+@app.route('/user/<int:id>', methods=['GET'])
+def get_user_details(id):
+    user = User.query.get(id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'user_type': user.user_type
+    })
+
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -73,13 +85,20 @@ def login():
 @app.route('/update_user', methods=['POST'])
 def update_user():
     data = request.get_json()
-    user = User.query.get(data['id'])
+    user_id = data.get('id')
+
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+
     user.username = data.get('username', user.username)
     user.email = data.get('email', user.email)
     if 'password' in data:
         user.password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+
     db.session.commit()
     return jsonify({'message': 'User updated successfully'})
 
