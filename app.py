@@ -40,7 +40,6 @@ class Investment(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('alcohol_product.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     storage_period = db.Column(db.Integer, nullable=False)
-    investment_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route('/test_session', methods=['GET'])
 def test_session():
@@ -134,12 +133,16 @@ def create_investment():
         return jsonify({'error': 'Unauthorized access'}), 403
 
     data = request.get_json()
-    client_id = session['user_id']
-    product_id = data.get('product_id')
-    amount = data.get('amount')
-    storage_period = data.get('storage_period')
 
-    if not product_id or not amount or not storage_period:
+    try:
+        client_id = int(data.get('client_id'))  # Ensure it's an integer
+        product_id = int(data.get('product_id'))  # Ensure it's an integer
+        amount = float(data.get('amount'))  # Ensure it's a float
+        storage_period = int(data.get('storage_period'))  # Ensure it's an integer
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid input data'}), 400
+
+    if not client_id or not product_id or not amount or not storage_period:
         return jsonify({'error': 'All fields are required'}), 400
 
     new_investment = Investment(
@@ -155,6 +158,7 @@ def create_investment():
         return jsonify({'message': 'Investment created successfully'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
 
 @app.route('/investments/<int:client_id>', methods=['GET'])
 def get_investments(client_id):
