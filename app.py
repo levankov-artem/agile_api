@@ -128,6 +128,70 @@ def update_user():
     db.session.commit()
     return jsonify({'message': 'User updated successfully'})
 
+@app.route('/investments', methods=['POST'])
+def create_investment():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    data = request.get_json()
+    client_id = session['user_id']
+    product_id = data.get('product_id')
+    amount = data.get('amount')
+    storage_period = data.get('storage_period')
+
+    if not product_id or not amount or not storage_period:
+        return jsonify({'error': 'All fields are required'}), 400
+
+    new_investment = Investment(
+        client_id=client_id,
+        product_id=product_id,
+        amount=amount,
+        storage_period=storage_period
+    )
+
+    try:
+        db.session.add(new_investment)
+        db.session.commit()
+        return jsonify({'message': 'Investment created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/investments/<int:client_id>', methods=['GET'])
+def get_investments(client_id):
+    if 'user_id' not in session or session['user_id'] != client_id:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    investments = Investment.query.filter_by(client_id=client_id).all()
+    if not investments:
+        return jsonify({'message': 'No investments found'}), 404
+
+    investment_list = [{
+        'id': inv.id,
+        'product_id': inv.product_id,
+        'amount': inv.amount,
+        'storage_period': inv.storage_period,
+        'investment_date': inv.investment_date
+    } for inv in investments]
+
+    return jsonify(investment_list), 200
+
+
+@app.route('/investments/<int:investment_id>', methods=['DELETE'])
+def delete_investment(investment_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    investment = Investment.query.get(investment_id)
+    if not investment or investment.client_id != session['user_id']:
+        return jsonify({'error': 'Investment not found or unauthorized access'}), 404
+
+    try:
+        db.session.delete(investment)
+        db.session.commit()
+        return jsonify({'message': 'Investment deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
