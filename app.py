@@ -17,7 +17,7 @@ Session(app)
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "https://fantastic-melba-aad350.netlify.app"}})
 
 # Database Models
 class User(db.Model):
