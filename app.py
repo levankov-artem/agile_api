@@ -21,6 +21,7 @@ CORS(app, supports_credentials=True, resources={r"/*": {"origins": "https://fant
 
 # Database Models
 class User(db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -28,6 +29,7 @@ class User(db.Model):
     user_type = db.Column(db.String(20), nullable=False)
 
 class AlcoholProduct(db.Model):
+    __tablename__ = 'alcohol_production'
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(80), nullable=False)
@@ -35,6 +37,7 @@ class AlcoholProduct(db.Model):
     storage_duration = db.Column(db.Integer, nullable=False)
 
 class Investment(db.Model):
+    __tablename__ = 'investments'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('alcohol_product.id'), nullable=False)
