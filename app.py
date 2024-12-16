@@ -29,7 +29,7 @@ class User(db.Model):
     user_type = db.Column(db.String(20), nullable=False)
 
 class AlcoholProduct(db.Model):
-    __tablename__ = 'alcohol_production'
+    __tablename__ = 'alcohol_products'
     id = db.Column(db.Integer, primary_key=True)
     company_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(80), nullable=False)
