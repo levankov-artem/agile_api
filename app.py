@@ -164,6 +164,8 @@ def create_investment():
 
 @app.route('/investments/<int:client_id>', methods=['GET'])
 def get_investments(client_id):
+    if 'user_id' not in session or session['user_id'] != client_id:
+        return jsonify({'error': 'Unauthorized access'}), 403
 
     investments = Investment.query.filter_by(client_id=client_id).all()
     if not investments:
@@ -207,8 +209,6 @@ def get_companies():
 
 @app.route('/products', methods=['POST'])
 def register_product():
-    if 'user_id' not in session or session['user_type'] != 'company':
-        return jsonify({'error': 'Unauthorized access'}), 403
 
     data = request.get_json()
     name = data.get('name')
