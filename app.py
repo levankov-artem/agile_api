@@ -96,7 +96,7 @@ def logout():
 
 @app.route('/user/<int:id>', methods=['GET'])
 def get_user_details(id):
-    if 'user_id' not in session or session['user_id'] != id:
+    if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized access'}), 403
 
     user = User.query.get(id)
