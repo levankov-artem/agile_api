@@ -164,8 +164,6 @@ def create_investment():
 
 @app.route('/investments/<int:client_id>', methods=['GET'])
 def get_investments(client_id):
-    if 'user_id' not in session or session['user_id'] != client_id:
-        return jsonify({'error': 'Unauthorized access'}), 403
 
     investments = Investment.query.filter_by(client_id=client_id).all()
     if not investments:
