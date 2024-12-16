@@ -138,7 +138,7 @@ def create_investment():
     data = request.get_json()
 
     try:
-        product_name = int(data.get('product_name'))  # Ensure it's an integer
+        product_name = float(data.get('product_name'))
         amount = float(data.get('amount'))  # Ensure it's a float
         storage_period = int(data.get('storage_period'))  # Ensure it's an integer
     except (ValueError, TypeError):
