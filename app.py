@@ -40,7 +40,7 @@ class Investment(db.Model):
     __tablename__ = 'investments'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('alcohol_product.id'), nullable=False)
+    product_name = db.Column(db.String(120), unique=True, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     storage_period = db.Column(db.Integer, nullable=False)
 
@@ -138,19 +138,18 @@ def create_investment():
     data = request.get_json()
 
     try:
-        client_id = int(data.get('client_id'))  # Ensure it's an integer
-        product_id = int(data.get('product_id'))  # Ensure it's an integer
+        product_name = int(data.get('product_name'))  # Ensure it's an integer
         amount = float(data.get('amount'))  # Ensure it's a float
         storage_period = int(data.get('storage_period'))  # Ensure it's an integer
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid input data'}), 400
 
-    if not client_id or not product_id or not amount or not storage_period:
+    if not product_name or not amount or not storage_period:
         return jsonify({'error': 'All fields are required'}), 400
 
     new_investment = Investment(
-        client_id=client_id,
-        product_id=product_id,
+        client_id=session['user_id'],
+        product_name=product_name,
         amount=amount,
         storage_period=storage_period
     )
