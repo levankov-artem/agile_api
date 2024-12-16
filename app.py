@@ -159,7 +159,6 @@ def create_investment():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-
 @app.route('/investments/<int:client_id>', methods=['GET'])
 def get_investments(client_id):
     if 'user_id' not in session or session['user_id'] != client_id:
@@ -179,7 +178,6 @@ def get_investments(client_id):
 
     return jsonify(investment_list), 200
 
-
 @app.route('/investments/<int:investment_id>', methods=['DELETE'])
 def delete_investment(investment_id):
     if 'user_id' not in session:
@@ -195,6 +193,57 @@ def delete_investment(investment_id):
         return jsonify({'message': 'Investment deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+@app.route('/companies', methods=['GET'])
+def get_companies():
+    companies = User.query.filter_by(user_type='company').all()
+    result = []
+    for company in companies:
+        products = AlcoholProduct.query.filter_by(company_id=company.id).all()
+        product_list = [{'name': p.name, 'type': p.type, 'storage_duration': p.storage_duration} for p in products]
+        result.append({'company_name': company.username, 'products': product_list})
+    return jsonify(result), 200
+
+@app.route('/products', methods=['POST'])
+def register_product():
+    if 'user_id' not in session or session['user_type'] != 'company':
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    data = request.get_json()
+    name = data.get('name')
+    type = data.get('type')
+    storage_duration = data.get('storage_duration')
+
+    if not name or not type or not storage_duration:
+        return jsonify({'error': 'All fields are required'}), 400
+
+    new_product = AlcoholProduct(
+        company_id=session['user_id'],
+        name=name,
+        type=type,
+        storage_duration=storage_duration
+    )
+
+    db.session.add(new_product)
+    db.session.commit()
+    return jsonify({'message': 'Product registered successfully'}), 201
+
+@app.route('/investments_list', methods=['GET'])
+def get_investments_list():
+    if 'user_id' not in session or session['user_type'] != 'client':
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    investments = Investment.query.filter_by(client_id=session['user_id']).all()
+    result = []
+    for inv in investments:
+        product = AlcoholProduct.query.get(inv.product_id)
+        result.append({
+            'id': inv.id,
+            'product_name': product.name,
+            'amount': inv.amount,
+            'storage_period': inv.storage_period
+        })
+    return jsonify(result), 200
 
 if __name__ == '__main__':
     with app.app_context():
