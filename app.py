@@ -138,7 +138,7 @@ def create_investment():
     data = request.get_json()
 
     try:
-        product_name = float(data.get('product_name'))
+        product_name = data.get('product_name')  # Expect a string
         amount = float(data.get('amount'))  # Ensure it's a float
         storage_period = int(data.get('storage_period'))  # Ensure it's an integer
     except (ValueError, TypeError):
@@ -148,7 +148,7 @@ def create_investment():
         return jsonify({'error': 'All fields are required'}), 400
 
     new_investment = Investment(
-        client_id=session['user_id'],
+        client_id=session['user_id'],  # Get client_id from session
         product_name=product_name,
         amount=amount,
         storage_period=storage_period
