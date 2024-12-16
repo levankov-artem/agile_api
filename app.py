@@ -244,8 +244,7 @@ def get_investments_list():
             'id': inv.id,
             'product_name': inv.product_name,
             'amount': inv.amount,
-            'storage_period': inv.storage_period,
-            'created_at': inv.created_at
+            'storage_period': inv.storage_period
         })
 
     return jsonify(investment_list), 200
