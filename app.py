@@ -209,6 +209,8 @@ def get_companies():
 
 @app.route('/products', methods=['POST'])
 def register_product():
+    if 'user_id' not in session or session['user_type'] != 'company':
+        return jsonify({'error': 'Unauthorized access'}), 403
 
     data = request.get_json()
     name = data.get('name')
