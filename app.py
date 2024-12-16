@@ -31,7 +31,7 @@ class User(db.Model):
 class AlcoholProduct(db.Model):
     __tablename__ = 'alcohol_production'
     id = db.Column(db.Integer, primary_key=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     name = db.Column(db.String(80), nullable=False)
     type = db.Column(db.String(50), nullable=False)
     storage_duration = db.Column(db.Integer, nullable=False)
@@ -39,7 +39,7 @@ class AlcoholProduct(db.Model):
 class Investment(db.Model):
     __tablename__ = 'investments'
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('alcohol_product.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     storage_period = db.Column(db.Integer, nullable=False)
