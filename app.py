@@ -40,7 +40,7 @@ class Investment(db.Model):
     __tablename__ = 'investments'
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    product_name = db.Column(db.String(120), unique=True, nullable=False)
+    product_name = db.Column(db.String(255), unique=True, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     storage_period = db.Column(db.Integer, nullable=False)
 
@@ -232,20 +232,24 @@ def register_product():
 
 @app.route('/investments_list', methods=['GET'])
 def get_investments_list():
-    if 'user_id' not in session or session['user_type'] != 'client':
+    if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized access'}), 403
 
-    investments = Investment.query.filter_by(client_id=session['user_id']).all()
-    result = []
+    user_id = session['user_id']
+    investments = Investment.query.filter_by(client_id=user_id).all()
+
+    investment_list = []
     for inv in investments:
-        product = AlcoholProduct.query.get(inv.product_id)
-        result.append({
+        investment_list.append({
             'id': inv.id,
-            'product_name': product.name,
+            'product_name': inv.product_name,
             'amount': inv.amount,
-            'storage_period': inv.storage_period
+            'storage_period': inv.storage_period,
+            'created_at': inv.created_at
         })
-    return jsonify(result), 200
+
+    return jsonify(investment_list), 200
+
 
 if __name__ == '__main__':
     with app.app_context():
