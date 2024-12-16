@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -27,7 +26,6 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
     user_type = db.Column(db.String(20), nullable=False)
-    company_name = db.Column(db.String(120), nullable=True)
 
 class AlcoholProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,7 +40,13 @@ class Investment(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('alcohol_product.id'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     storage_period = db.Column(db.Integer, nullable=False)
-    investment_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+@app.route('/test_session', methods=['GET'])
+def test_session():
+    if 'user_id' in session:
+        return jsonify({'message': 'Session is active', 'user_id': session['user_id']}), 200
+    else:
+        return jsonify({'error': 'No active session'}), 403
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -82,36 +86,46 @@ def login():
     else:
         return jsonify({'error': 'Invalid credentials'}), 401
 
-@app.route('/companies', methods=['GET'])
-def get_companies():
-    companies = User.query.filter_by(user_type='company').all()
-    result = [{
-        'id': company.id,
-        'company_name': company.username,
-        'products': [
-            {'id': product.id, 'name': product.name, 'type': product.type, 'storage_duration': product.storage_duration}
-            for product in AlcoholProduct.query.filter_by(company_id=company.id).all()
-        ]
-    } for company in companies]
-    return jsonify(result), 200
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'message': 'Logged out successfully'}), 200
 
-@app.route('/companies/<int:company_id>/products', methods=['POST'])
-def add_product(company_id):
-    if 'user_id' not in session or session['user_type'] != 'company' or session['user_id'] != company_id:
+@app.route('/user/<int:id>', methods=['GET'])
+def get_user_details(id):
+    if 'user_id' not in session or session['user_id'] != id:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    user = User.query.get(id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'user_type': user.user_type
+    })
+
+@app.route('/update_user', methods=['POST'])
+def update_user():
+    if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized access'}), 403
 
     data = request.get_json()
-    name = data.get('name')
-    type_ = data.get('type')
-    storage_duration = data.get('storage_duration')
+    user_id = session['user_id']
+    user = User.query.get(user_id)
 
-    if not name or not type_ or not storage_duration:
-        return jsonify({'error': 'All fields are required'}), 400
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
 
-    new_product = AlcoholProduct(company_id=company_id, name=name, type=type_, storage_duration=storage_duration)
-    db.session.add(new_product)
+    user.username = data.get('username', user.username)
+    user.email = data.get('email', user.email)
+    if 'password' in data:
+        user.password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+
     db.session.commit()
-    return jsonify({'message': 'Product added successfully'}), 201
+    return jsonify({'message': 'User updated successfully'})
 
 @app.route('/investments', methods=['POST'])
 def create_investment():
@@ -119,12 +133,16 @@ def create_investment():
         return jsonify({'error': 'Unauthorized access'}), 403
 
     data = request.get_json()
-    client_id = session['user_id']
-    product_id = data.get('product_id')
-    amount = data.get('amount')
-    storage_period = data.get('storage_period')
 
-    if not product_id or not amount or not storage_period:
+    try:
+        client_id = int(data.get('client_id'))  # Ensure it's an integer
+        product_id = int(data.get('product_id'))  # Ensure it's an integer
+        amount = float(data.get('amount'))  # Ensure it's a float
+        storage_period = int(data.get('storage_period'))  # Ensure it's an integer
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid input data'}), 400
+
+    if not client_id or not product_id or not amount or not storage_period:
         return jsonify({'error': 'All fields are required'}), 400
 
     new_investment = Investment(
@@ -134,20 +152,24 @@ def create_investment():
         storage_period=storage_period
     )
 
-    db.session.add(new_investment)
-    db.session.commit()
-    return jsonify({'message': 'Investment created successfully'}), 201
+    try:
+        db.session.add(new_investment)
+        db.session.commit()
+        return jsonify({'message': 'Investment created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
-@app.route('/investments', methods=['GET'])
-def get_investments():
-    if 'user_id' not in session or session['user_type'] != 'client':
+
+@app.route('/investments/<int:client_id>', methods=['GET'])
+def get_investments(client_id):
+    if 'user_id' not in session or session['user_id'] != client_id:
         return jsonify({'error': 'Unauthorized access'}), 403
 
-    investments = Investment.query.filter_by(client_id=session['user_id']).all()
+    investments = Investment.query.filter_by(client_id=client_id).all()
     if not investments:
-        return jsonify([]), 200
+        return jsonify({'message': 'No investments found'}), 404
 
-    result = [{
+    investment_list = [{
         'id': inv.id,
         'product_id': inv.product_id,
         'amount': inv.amount,
@@ -155,7 +177,24 @@ def get_investments():
         'investment_date': inv.investment_date
     } for inv in investments]
 
-    return jsonify(result), 200
+    return jsonify(investment_list), 200
+
+
+@app.route('/investments/<int:investment_id>', methods=['DELETE'])
+def delete_investment(investment_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized access'}), 403
+
+    investment = Investment.query.get(investment_id)
+    if not investment or investment.client_id != session['user_id']:
+        return jsonify({'error': 'Investment not found or unauthorized access'}), 404
+
+    try:
+        db.session.delete(investment)
+        db.session.commit()
+        return jsonify({'message': 'Investment deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
     with app.app_context():
